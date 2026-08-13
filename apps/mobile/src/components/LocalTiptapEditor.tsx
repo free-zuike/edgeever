@@ -675,11 +675,14 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       const next = resolveImageSources(parsed, props.baseUrl);
       // Do not focus while replacing content. Callers decide when the editor should
       // take focus and place the caret via focusEnd().
-      editor.commands.setContent(next, { emitUpdate: !isViewer });
+      // This command synchronizes native-owned state (draft restore/template/new
+      // composer reset). Callers already own persistence for that state, so an
+      // emitted update would create a delayed stale write during screen teardown.
+      editor.commands.setContent(next, { emitUpdate: false });
     } catch {
       // Ignore malformed payloads from the native bridge.
     }
-  }, [editor, isViewer, props.baseUrl]);
+  }, [editor, props.baseUrl]);
 
   const search = useCallback((query: DOMValue, requestedIndex: DOMValue) => {
     const normalizedQuery = typeof query === "string" ? query : "";
@@ -2523,11 +2526,11 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
   .edgeever-editor-content h2 { margin: 0.85em 0 0.35em; font-size: 1.35rem; }
   .edgeever-editor-content h3 { margin: 0.75em 0 0.3em; font-size: 1.15rem; }
   .edgeever-editor-content ul[data-type="taskList"] { margin: 0 0 var(--editor-paragraph-spacing); padding-left: 0; list-style: none; }
-  .edgeever-editor-content ul[data-type="taskList"] li[data-type="taskItem"] { display: flex; align-items: flex-start; gap: 9px; margin: 4px 0; }
-  .edgeever-editor-content ul[data-type="taskList"] li[data-type="taskItem"] > label { display: inline-flex; flex: 0 0 auto; align-items: center; margin-top: 3px; user-select: none; }
-  .edgeever-editor-content ul[data-type="taskList"] li[data-type="taskItem"] > label input { width: 18px; height: 18px; margin: 0; accent-color: #16a06e; }
-  .edgeever-editor-content ul[data-type="taskList"] li[data-type="taskItem"] > div { min-width: 0; flex: 1 1 auto; }
-  .edgeever-editor-content ul[data-type="taskList"] li[data-type="taskItem"] > div > p { margin-bottom: 0; }
+  .edgeever-editor-content ul[data-type="taskList"] li[data-checked] { display: flex; align-items: flex-start; gap: 9px; margin: 4px 0; }
+  .edgeever-editor-content ul[data-type="taskList"] li[data-checked] > label { display: inline-flex; flex: 0 0 auto; align-items: center; margin-top: 3px; user-select: none; }
+  .edgeever-editor-content ul[data-type="taskList"] li[data-checked] > label input { width: 18px; height: 18px; margin: 0; accent-color: #16a06e; }
+  .edgeever-editor-content ul[data-type="taskList"] li[data-checked] > div { min-width: 0; flex: 1 1 auto; }
+  .edgeever-editor-content ul[data-type="taskList"] li[data-checked] > div > p { margin-bottom: 0; }
   .edgeever-editor-content ul[data-type="taskList"] ul[data-type="taskList"] { margin: 4px 0 0; padding-left: 24px; }
   .edgeever-editor-content blockquote { margin-left: 0; max-width: 100%; padding-left: 14px; border-left: 3px solid #5eead4; color: ${theme === "dark" ? "#cbd5e1" : "#475569"}; }
   .edgeever-editor-content pre { max-width: 100%; overflow-x: auto; border-radius: 10px; padding: 14px 90px 14px 14px; background: #0f172a; color: #e2e8f0; font-size: 0.9rem; }
